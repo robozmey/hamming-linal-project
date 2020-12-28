@@ -60,7 +60,10 @@ def rnd():
 
 
 def corrupted(blocks):
-    blocks[int(rnd() % blocks.shape[0])][rnd() % 4][0] = int(blocks[int(rnd() % blocks.shape[0])][rnd() % 4][0]) ^ 1
+    x = int(rnd() % blocks.shape[0])
+    y = rnd() % 7
+
+    blocks[x][y][0] = int(blocks[x][y][0]) ^ 1
 
     return blocks
 
@@ -124,5 +127,5 @@ def run(string):
 
 
 if __name__ == '__main__':
-    print(run("qwerty 123"))
+    print(run("fhggff"))
 
