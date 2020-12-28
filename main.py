@@ -41,7 +41,7 @@ def control_sum(code):
 
 
 def error_in(control):
-    return control[2][0] * 4 + control[1][0] * 2 + control[0][0] - 1
+    return control[2][0] * 1 + control[1][0] * 2 + control[0][0] * 4 - 1
 
 
 def to_bits(string):
@@ -65,24 +65,64 @@ def corrupted(blocks):
     return blocks
 
 
+def unhamming(blocks):
+    key = []
+    source = []
+
+    for i in itertools.product([0, 1], repeat=4):
+        key.append(dot(G, np.array(i).reshape((4, 1))))
+        source.append(i)
+
+    bits = np.array([], np.int)
+    for i in blocks:
+        for j in range(len(key)):
+            if (key[j] == i).all():
+                for k in source[j]:
+                    bits = np.append(bits, [k])
+    return bits
+
+
+def to_str(bits):
+    string = ""
+    for i in range(len(bits) // 8):
+        k = 0
+        for j in range(8):
+            k += (int(bits[i * 8 + j]) << j)
+
+        string += chr(k)
+
+    return string
+
+
 def run(string):
     bits = to_bits(string)
-    blocks = coded(bits)
+    blocks = coded(bits.copy())
 
-    corrupted_blocks = corrupted(blocks)
+    corrupted_blocks = corrupted(blocks.copy())
 
-    control = control_sum(corrupted_blocks)
+    control = control_sum(corrupted_blocks.copy())
 
-    tmp_blocks = corrupted_blocks
+    tmp_blocks = corrupted_blocks.copy()
     corrupted_block_number = np.argmax(control) // 3
     corrupted_block_control = control[corrupted_block_number]
 
     tmp_blocks[corrupted_block_number][error_in(corrupted_block_control)][0] = \
         tmp_blocks[corrupted_block_number][error_in(corrupted_block_control)][0] ^ 1
-    repaired_blocks = tmp_blocks
-    assert (np.array_equal(blocks, repaired_blocks))
+    repaired_blocks = tmp_blocks.copy()
+
+    assert ((blocks == repaired_blocks).all())
+
+    repaired_bits = unhamming(repaired_blocks)
+
+    assert ((bits.ravel() == repaired_bits).all())
+
+    repaired_str = to_str(repaired_bits)
+
+    assert (string == repaired_str)
+
+    return repaired_str
 
 
 if __name__ == '__main__':
-    run("qwerty 123")
+    print(run("qwerty 123"))
 
